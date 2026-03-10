@@ -1,632 +1,713 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="UTF-8">
-<title>ギタースケール計算ツールβ</title>
-<style>
-  * { box-sizing: border-box; }
+  <meta charset="UTF-8">
+  <title>ギタースケール計算ツールβ</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  body {
-    font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    margin: 0;
-    padding: 24px;
-    background: #ffffff;
-    color: #222;
-  }
+    body {
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #ffffff;
+      color: #222;
+    }
 
-  .app {
-    max-width: 1100px;
-    margin: 0 auto;
-  }
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
 
-  h1 {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 24px;
-  }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
 
-  .section {
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e5e5e5;
-  }
+    .section {
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e5e5e5;
+    }
 
-  .btn-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
 
-  button {
-    padding: 8px 14px;
-    border: 1px solid #d0d0d0;
-    background: #fafafa;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: 0.15s;
-  }
+    button {
+      padding: 8px 14px;
+      border: 1px solid #d0d0d0;
+      background: #fafafa;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.15s;
+    }
 
-  button:hover {
-    background: #f0f0f0;
-  }
+    button:hover {
+      background: #f0f0f0;
+    }
 
-  button.active {
-    background: #2f80ed;
-    border-color: #2f80ed;
-    color: #fff;
-  }
+    button.active {
+      background: #2f80ed;
+      border-color: #2f80ed;
+      color: #fff;
+    }
 
-  button.guide {
-    opacity: 0.5;
-  }
+    button.guide {
+      opacity: 0.5;
+    }
 
-  #japaneseKey {
-    float: right;
-    font-weight: 600;
-    font-size: 16px;
-  }
+    button.candidate {
+      border-color: #2f80ed;
+      color: #2f80ed;
+      background: #f0f8ff;
+      font-weight: 600;
+      box-shadow: 0 0 0 1px #2f80ed;
+    }
 
-  .fretboard-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
+    #japaneseKey {
+      float: right;
+      font-weight: 600;
+      font-size: 16px;
+    }
 
-  .fret-numbers {
-    display: grid;
-    grid-template-columns: repeat(25, 1fr);
-    gap: 2px;
-    margin-top: 8px; 
-  }
+    .fretboard-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
 
-  .fret-num {
-    text-align: center;
-    font-size: 12px;
-    color: #666;
-  }
+    .fret-numbers {
+      display: grid;
+      grid-template-columns: repeat(25, 1fr);
+      gap: 2px;
+      margin-top: 8px;
+    }
 
-  .fret-num.bold {
-    font-weight: 700;
-    color: #222;
-  }
+    .fret-num {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
 
-  .fretboard {
-    display: grid;
-    grid-template-columns: repeat(25, 1fr);
-    gap: 2px;
-    background: #ddd; 
-    padding: 2px 0;
-  }
+    .fret-num.bold {
+      font-weight: 700;
+      color: #222;
+    }
 
-  .fret {
-    height: 36px;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    border: 1px solid #eee;
-  }
+    .fretboard {
+      display: grid;
+      grid-template-columns: repeat(25, 1fr);
+      gap: 2px;
+      background: #ddd;
+      padding: 2px 0;
+    }
 
-  .fret.open {
-    background: #f9f9f9;
-    border-right: 6px solid #444; 
-    font-weight: 500;
-  }
+    .fret {
+      height: 36px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      border: 1px solid #eee;
+    }
 
-  .fret.in-scale {
-    background: #e3f2fd;
-  }
+    .fret.open {
+      background: #f9f9f9;
+      border-right: 6px solid #444;
+      font-weight: 500;
+    }
 
-  .fret.root {
-    background: #ffdddd !important;
-    border-color: #ff8888;
-    font-weight: 700;
-    color: #d32f2f;
-  }
+    .fret.in-scale {
+      background: #e3f2fd;
+    }
 
-  .piano {
-    display: flex;
-    margin-top: 16px;
-    height: 160px;
-    position: relative;
-  }
+    .fret.root {
+      background: #ffdddd !important;
+      border-color: #ff8888;
+      font-weight: 700;
+      color: #d32f2f;
+    }
 
-  .white-key {
-    width: 42px;
-    height: 160px;
-    background: #fff;
-    border: 1px solid #aaa;
-    position: relative;
-  }
+    .piano {
+      display: flex;
+      margin-top: 16px;
+      height: 160px;
+      position: relative;
+    }
 
-  .black-key {
-  width: 28px;
-  height: 100px;
-  background: #000;
-  position: absolute;
-  top: 0;
-  left: 30px;
-  border-radius: 0 0 3px 3px;
-  z-index: 10;
-  border: 1px solid #444;    
-  box-sizing: border-box;    
-}
+    .white-key {
+      width: 42px;
+      height: 160px;
+      background: #fff;
+      border: 1px solid #aaa;
+      position: relative;
+    }
 
-  .highlight {
-    background: #ffdddd !important;
-  }
+    .black-key {
+      width: 28px;
+      height: 100px;
+      background: #000;
+      position: absolute;
+      top: 0;
+      left: 30px;
+      border-radius: 0 0 3px 3px;
+      z-index: 10;
+      border: 1px solid #444;
+      box-sizing: border-box;
+    }
 
-  .code-box {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-  }
+    .highlight {
+      background: #ffdddd !important;
+    }
 
-  .code-card {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    background: #fafafa;
-    border-radius: 3px;
-    font-size: 14px;
-    cursor: pointer;
-  }
+    .code-box {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
 
-  .code-card.active {
-    background: #2f80ed;
-    border-color: #2f80ed;
-    color: #fff;
-  }
+    .code-card {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+      border-radius: 3px;
+      font-size: 14px;
+      cursor: pointer;
+    }
 
-.code-section {
-  overflow-x: auto; 
-  margin-top: 16px;
-}
+    .code-card.active {
+      background: #2f80ed;
+      border-color: #2f80ed;
+      color: #fff;
+    }
 
-.chord-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px; 
-}
+    .code-section {
+      overflow-x: auto;
+      margin-top: 16px;
+    }
 
-.chord-table th, .chord-table td {
-  border: 1px solid #ddd;
-  padding: 12px 8px;
-  text-align: center;
-}
+    .chord-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
 
-.chord-table th {
-  background-color: #f8f9fa;
-  font-size: 13px;
-  color: #666;
-  font-weight: 600;
-}
+    .chord-table th,
+    .chord-table td {
+      border: 1px solid #ddd;
+      padding: 12px 8px;
+      text-align: center;
+    }
 
-.degree-name {
-  display: block;
-  font-family: serif;
-  margin-bottom: 4px;
-}
+    .chord-table th {
+      background-color: #f8f9fa;
+      font-size: 13px;
+      color: #666;
+      font-weight: 600;
+    }
 
-.chord-name {
-  display: block;
-  font-size: 18px;
-  font-weight: bold;
-  color: #2f80ed;
-}
+    .degree-name {
+      display: block;
+      font-family: serif;
+      margin-bottom: 4px;
+    }
 
-.notes-list {
-  display: block;
-  font-size: 11px;
-  color: #777;
-  margin-top: 4px;
-  letter-spacing: 0.5px;
-}
+    .chord-name {
+      display: block;
+      font-size: 18px;
+      font-weight: bold;
+      color: #2f80ed;
+    }
 
-.chord-table td:first-child {
-  background-color: #fffafa;
-}
+    .notes-list {
+      display: block;
+      font-size: 11px;
+      color: #777;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
 
-  @media (max-width: 768px) {
-    body { padding: 12px; }
-    .fretboard-wrapper { font-size: 12px; }
-  }
-</style>
+    .chord-table td:first-child {
+      background-color: #fffafa;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+
+      .fretboard-wrapper {
+        font-size: 12px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="app">
-  <h1>ギタースケール計算ツールβ</h1>
+  <div class="app">
+    <h1>ギタースケール計算ツールβ</h1>
 
-  <div class="section">
-    <div class="btn-group" id="accidentalButtons">
-      <button data-type="sharp">＃</button>
-      <button data-type="flat">♭</button>
+    <div class="section">
+      <div class="btn-group" style="align-items: center; width: 100%;">
+        <span style="font-size: 14px; font-weight: 600; color: #444;">変化記号:</span>
+        <div class="btn-group" id="accidentalButtons">
+          <button data-type="sharp">＃</button>
+          <button data-type="flat">♭</button>
+        </div>
+        <span style="font-size: 14px; font-weight: 600; color: #444; margin-left: 8px;">数:</span>
+        <div class="btn-group" id="keyCountButtons"></div>
+        <button id="resetBtn"
+          style="margin-left: auto; background: #fff0f0; border-color: #ffcccc; color: #d32f2f; font-weight: 600;">リセット</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="btn-group" id="rootButtons"></div>
+      <span id="japaneseKey"></span>
+    </div>
+
+    <div class="section">
+      <div class="btn-group" id="scaleButtons"></div>
+    </div>
+
+    <div class="section">
+      <div class="btn-group">
+        <button id="guitarBtn">ギター</button>
+        <button id="bassBtn">ベース</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="fretboard-wrapper">
+        <div id="fretboard" class="fretboard"></div>
+        <div class="fret-numbers" id="fretNumbers"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div id="piano" class="piano"></div>
+    </div>
+
+    <div class="section">
+      <h2 style="font-size:18px; margin-bottom:12px;">ダイアトニックコード <span
+          style="font-size:12px; font-weight:normal; color:#666;">(1度-3度-5度)</span></h2>
+      <div class="code-section">
+        <div id="codeBox" class="code-box"></div>
+      </div>
     </div>
   </div>
 
-  <div class="section">
-    <div class="btn-group" id="keyCountButtons"></div>
-  </div>
+  <script>
+    const notesSharp = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const notesFlat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
-  <div class="section">
-    <div class="btn-group" id="rootButtons"></div>
-    <span id="japaneseKey"></span>
-  </div>
+    const jpNames = {
+      "C": "ハ", "D": "ニ", "E": "ホ", "F": "ヘ", "G": "ト", "A": "イ", "B": "ロ"
+    };
 
-  <div class="section">
-    <div class="btn-group" id="scaleButtons"></div>
-  </div>
+    const scalePatterns = {
+      "メジャー": [2, 2, 1, 2, 2, 2, 1],
+      "ナチュラルマイナー": [2, 1, 2, 2, 1, 2, 2],
+      "ハーモニックマイナー": [2, 1, 2, 2, 1, 3, 1],
+      "メロディックマイナー": [2, 1, 2, 2, 2, 2, 1],
+      "ペンタトニック": [2, 2, 3, 2, 3]
+    };
 
-  <div class="section">
-    <div class="btn-group">
-      <button id="guitarBtn">ギター</button>
-      <button id="bassBtn">ベース</button>
-    </div>
-  </div>
+    const majorChords = ["I", "ii", "iii", "IV", "V", "vi", "vii°"];
+    const minorChords = ["i", "ii°", "III", "iv", "v", "VI", "VII"];
 
-  <div class="section">
-    <div class="fretboard-wrapper">
-      <div id="fretboard" class="fretboard"></div>
-      <div class="fret-numbers" id="fretNumbers"></div> </div>
-  </div>
+    const sharpKeys = ["C", "G", "D", "A", "E", "B", "F#", "C#"];
+    const flatKeys = ["C", "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"];
 
-  <div class="section">
-    <div id="piano" class="piano"></div>
-  </div>
+    const sharpMinorKeys = ["A", "E", "B", "F#", "C#", "G#", "D#", "A#"];
+    const flatMinorKeys = ["A", "D", "G", "C", "F", "Bb", "Eb", "Ab"];
 
-  <div class="section">
-  <h2 style="font-size:18px; margin-bottom:12px;">ダイアトニックコード <span style="font-size:12px; font-weight:normal; color:#666;">(1度-3度-5度)</span></h2>
-  <div class="code-section">
-    <div id="codeBox" class="code-box"></div>
-  </div>
-</div>
-</div>
+    const majorScales = ["メジャー", "ペンタトニック"];
+    const minorScales = ["ナチュラルマイナー", "ハーモニックマイナー", "メロディックマイナー"];
 
-<script>
-  const notesSharp = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-  const notesFlat  = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+    let accidental = "sharp";
+    let keyCount = 0;
+    let selectedRoot = "C";
+    let selectedScale = "メジャー";
+    let instrument = "guitar";
 
-  const jpNames = {
-    "C":"ハ","D":"ニ","E":"ホ","F":"ヘ","G":"ト","A":"イ","B":"ロ"
-  };
-
-  const scalePatterns = {
-    "メジャー":            [2,2,1,2,2,2,1],
-    "ナチュラルマイナー":  [2,1,2,2,1,2,2],
-    "ハーモニックマイナー":[2,1,2,2,1,3,1],
-    "メロディックマイナー":[2,1,2,2,2,2,1],
-    "ペンタトニック":      [2,2,3,2,3]
-  };
-
-  const majorChords = ["I","ii","iii","IV","V","vi","vii°"];
-  const minorChords = ["i","ii°","III","iv","v","VI","VII"];
-
-  const sharpKeys = ["C","G","D","A","E","B","F#","C#"];
-  const flatKeys  = ["C","F","Bb","Eb","Ab","Db","Gb","Cb"];
-
-  let accidental = "sharp";
-  let keyCount   = 0;
-  let selectedRoot  = "C";
-  let selectedScale = "メジャー";
-  let instrument    = "guitar";
-
-  window.onload = () => {
-    initAccidentalButtons();
-    initKeyCountButtons();
-    initRootButtons();
-    initScaleButtons();
-    initInstrumentButtons();
-    drawFretNumbers();
-    drawPiano();
-    updateAll();
-  };
-
-  function currentNoteArray() {
-    return accidental === "sharp" ? notesSharp : notesFlat;
-  }
-
-  function initAccidentalButtons() {
-    document.querySelectorAll("#accidentalButtons button").forEach(btn => {
-      btn.onclick = () => {
-        accidental = btn.dataset.type;
-        updateRootButtons();
-        updateAll();
-      };
-    });
-  }
-
-  function initKeyCountButtons() {
-    const wrap = document.getElementById("keyCountButtons");
-    for (let i = 0; i <= 7; i++) {
-      const b = document.createElement("button");
-      b.textContent = i.toString();
-      b.dataset.count = i;
-      b.onclick = () => {
-        keyCount = i;
-        updateRootButtons();
-        updateAll();
-      };
-      wrap.appendChild(b);
-    }
-  }
-
-  function initRootButtons() {
-    updateRootButtons();
-  }
-
-  function updateRootButtons() {
-    const wrap = document.getElementById("rootButtons");
-    wrap.innerHTML = "";
-    const arr = currentNoteArray();
-    const validKey = (accidental === "sharp" ? sharpKeys : flatKeys)[keyCount];
-
-    arr.forEach(n => {
-      const b = document.createElement("button");
-      b.textContent = n;
-      b.dataset.note = n;
-      if (n === validKey) {
-        b.classList.add("active");
-      } else {
-        b.classList.add("guide");
-      }
-      b.onclick = () => {
-        applyKeyFromRoot(n);
-        updateAll();
-      };
-      wrap.appendChild(b);
-    });
-    selectedRoot = validKey;
-  }
-
-  function applyKeyFromRoot(root) {
-    const sharpIndex = sharpKeys.indexOf(root);
-    const flatIndex  = flatKeys.indexOf(root);
-    if (sharpIndex !== -1) {
-      accidental = "sharp";
-      keyCount   = sharpIndex;
-    } else if (flatIndex !== -1) {
-      accidental = "flat";
-      keyCount   = flatIndex;
-    } else {
-      accidental = "sharp";
-      keyCount   = 0;
-    }
-    selectedRoot = root;
-    updateAccidentalButtonsUI();
-    updateKeyCountButtonsUI();
-    updateRootButtons();
-  }
-
-  function initScaleButtons() {
-    const wrap = document.getElementById("scaleButtons");
-    Object.keys(scalePatterns).forEach(name => {
-      const b = document.createElement("button");
-      b.textContent = name;
-      b.onclick = () => {
-        selectedScale = name;
-        updateAll();
-      };
-      wrap.appendChild(b);
-    });
-  }
-
-  function initInstrumentButtons() {
-    document.getElementById("guitarBtn").onclick = () => {
-      instrument = "guitar";
+    window.onload = () => {
+      initAccidentalButtons();
+      initKeyCountButtons();
+      initRootButtons();
+      initScaleButtons();
+      initInstrumentButtons();
+      initResetButton();
+      drawFretNumbers();
+      drawPiano();
       updateAll();
     };
-    document.getElementById("bassBtn").onclick = () => {
-      instrument = "bass";
-      updateAll();
-    };
-  }
 
-  function getScaleNotes(root, scaleName) {
-    const arr = currentNoteArray();
-    let idx = arr.indexOf(root);
-    const pattern = scalePatterns[scaleName];
-    const result = [root];
-    pattern.forEach(step => {
-      idx = (idx + step) % 12;
-      result.push(arr[idx]);
-    });
-    return result;
-  }
-
-  function drawFretNumbers() {
-    const wrap = document.getElementById("fretNumbers");
-    wrap.innerHTML = "";
-    for (let f = 0; f <= 24; f++) {
-      const d = document.createElement("div");
-      d.className = "fret-num";
-      if ([0,1,3,5,7,9,12,15,17,19,21,24].includes(f)) {
-        d.textContent = f;
-        if (f === 12 || f === 0) d.classList.add("bold");
-      } else {
-        d.textContent = "";
+    function initResetButton() {
+      const btn = document.getElementById("resetBtn");
+      if (btn) {
+        btn.onclick = () => {
+          accidental = "sharp";
+          keyCount = 0;
+          selectedRoot = "C";
+          selectedScale = "メジャー";
+          instrument = "guitar";
+          updateAll();
+        };
       }
-      wrap.appendChild(d);
     }
-  }
 
-  function drawFretboard(scaleNotes) {
-    const fb = document.getElementById("fretboard");
-    fb.innerHTML = "";
-    const tuning = instrument === "guitar"
-      ? ["E","B","G","D","A","E"]
-      : ["G","D","A","E"];
-    const arr = currentNoteArray();
+    function currentNoteArray() {
+      return accidental === "sharp" ? notesSharp : notesFlat;
+    }
 
-    tuning.forEach(openNote => {
-      let openIdx = arr.indexOf(openNote);
-      for (let f = 0; f <= 24; f++) {
-        const note = arr[(openIdx + f) % 12];
-        const div = document.createElement("div");
-        div.className = "fret";
+    function applyKeySignatureChange() {
+      if (minorScales.includes(selectedScale)) {
+        selectedRoot = (accidental === "sharp" ? sharpMinorKeys : flatMinorKeys)[keyCount];
+      } else {
+        selectedRoot = (accidental === "sharp" ? sharpKeys : flatKeys)[keyCount];
+      }
+    }
 
-        if (f === 0) {
-          div.classList.add("open");
-        }
+    function initAccidentalButtons() {
+      document.querySelectorAll("#accidentalButtons button").forEach(btn => {
+        btn.onclick = () => {
+          accidental = btn.dataset.type;
+          applyKeySignatureChange();
+          updateAll();
+        };
+      });
+    }
 
-        // 音の判定
-        if (note === scaleNotes[0]) {
-          div.classList.add("root");
-          div.textContent = note;
-        } else if (scaleNotes.includes(note)) {
-          div.classList.add("in-scale");
-          div.textContent = note;
+    function initKeyCountButtons() {
+      const wrap = document.getElementById("keyCountButtons");
+      for (let i = 0; i <= 7; i++) {
+        const b = document.createElement("button");
+        b.textContent = i.toString();
+        b.dataset.count = i;
+        b.onclick = () => {
+          keyCount = i;
+          applyKeySignatureChange();
+          updateAll();
+        };
+        wrap.appendChild(b);
+      }
+    }
+
+    function initRootButtons() {
+      updateRootButtons();
+    }
+
+    function updateRootButtons() {
+      const wrap = document.getElementById("rootButtons");
+      wrap.innerHTML = "";
+      const arr = currentNoteArray();
+
+      const validMajorKey = (accidental === "sharp" ? sharpKeys : flatKeys)[keyCount];
+      const validMinorKey = (accidental === "sharp" ? sharpMinorKeys : flatMinorKeys)[keyCount];
+
+      arr.forEach(n => {
+        const b = document.createElement("button");
+        b.textContent = n;
+        b.dataset.note = n;
+
+        if (n === selectedRoot) {
+          b.classList.add("active");
+        } else if (n === validMajorKey || n === validMinorKey) {
+          b.classList.add("candidate");
         } else {
-          // 0フレット（開放弦）は常に音名を表示、それ以外は空白
-          div.textContent = (f === 0) ? note : "";
+          b.classList.add("guide");
         }
-        fb.appendChild(div);
+
+        b.onclick = () => {
+          applyKeyFromRoot(n);
+          updateAll();
+        };
+        wrap.appendChild(b);
+      });
+    }
+
+    function updateKeySignatureForRootAndScale(root, scaleName) {
+      if (minorScales.includes(scaleName)) {
+        const sIndex = sharpMinorKeys.indexOf(root);
+        const fIndex = flatMinorKeys.indexOf(root);
+        if (sIndex !== -1 && fIndex !== -1) {
+          if (accidental === "flat") keyCount = fIndex;
+          else keyCount = sIndex;
+        } else if (sIndex !== -1) {
+          accidental = "sharp"; keyCount = sIndex;
+        } else if (fIndex !== -1) {
+          accidental = "flat"; keyCount = fIndex;
+        }
+      } else {
+        const sIndex = sharpKeys.indexOf(root);
+        const fIndex = flatKeys.indexOf(root);
+        if (sIndex !== -1 && fIndex !== -1) {
+          if (accidental === "flat") keyCount = fIndex;
+          else keyCount = sIndex;
+        } else if (sIndex !== -1) {
+          accidental = "sharp"; keyCount = sIndex;
+        } else if (fIndex !== -1) {
+          accidental = "flat"; keyCount = fIndex;
+        }
       }
-    });
-  }
+    }
 
-  function drawPiano() {
-    const p = document.getElementById("piano");
-    p.innerHTML = "";
-    const white = ["C","D","E","F","G","A","B"];
-    const blackPos = { "C":"C#","D":"D#","F":"F#","G":"G#","A":"A#" };
-    white.forEach(w => {
-      const wk = document.createElement("div");
-      wk.className = "white-key";
-      wk.dataset.note = w;
-      p.appendChild(wk);
-      if (blackPos[w]) {
-        const bk = document.createElement("div");
-        bk.className = "black-key";
-        bk.dataset.note = blackPos[w];
-        wk.appendChild(bk);
+    function applyKeyFromRoot(root) {
+      const currentMajor = (accidental === "sharp" ? sharpKeys : flatKeys)[keyCount];
+      const currentMinor = (accidental === "sharp" ? sharpMinorKeys : flatMinorKeys)[keyCount];
+
+      selectedRoot = root;
+
+      if (root === currentMajor) {
+        if (minorScales.includes(selectedScale)) selectedScale = "メジャー";
+      } else if (root === currentMinor) {
+        if (majorScales.includes(selectedScale)) selectedScale = "ナチュラルマイナー";
+      } else {
+        // Prioritize the requested root by matching it to the currently selected scale
+        updateKeySignatureForRootAndScale(root, selectedScale);
       }
-    });
-  }
+    }
 
-  function updatePiano(scaleNotes) {
-    document.querySelectorAll(".white-key, .black-key").forEach(k => {
-      k.classList.remove("highlight");
-      if (scaleNotes.includes(k.dataset.note)) {
-        k.classList.add("highlight");
+    function initScaleButtons() {
+      const wrap = document.getElementById("scaleButtons");
+      Object.keys(scalePatterns).forEach(name => {
+        const b = document.createElement("button");
+        b.textContent = name;
+        b.onclick = () => {
+          selectedScale = name;
+          updateKeySignatureForRootAndScale(selectedRoot, selectedScale);
+          updateAll();
+        };
+        wrap.appendChild(b);
+      });
+    }
+
+    function initInstrumentButtons() {
+      document.getElementById("guitarBtn").onclick = () => {
+        instrument = "guitar";
+        updateAll();
+      };
+      document.getElementById("bassBtn").onclick = () => {
+        instrument = "bass";
+        updateAll();
+      };
+    }
+
+    function getScaleNotes(root, scaleName) {
+      const arr = currentNoteArray();
+      let idx = arr.indexOf(root);
+      const pattern = scalePatterns[scaleName];
+      const result = [root];
+      pattern.forEach(step => {
+        idx = (idx + step) % 12;
+        result.push(arr[idx]);
+      });
+      return result;
+    }
+
+    function drawFretNumbers() {
+      const wrap = document.getElementById("fretNumbers");
+      wrap.innerHTML = "";
+      for (let f = 0; f <= 24; f++) {
+        const d = document.createElement("div");
+        d.className = "fret-num";
+        if ([0, 1, 3, 5, 7, 9, 12, 15, 17, 19, 21, 24].includes(f)) {
+          d.textContent = f;
+          if (f === 12 || f === 0) d.classList.add("bold");
+        } else {
+          d.textContent = "";
+        }
+        wrap.appendChild(d);
       }
-    });
-  }
+    }
 
-  function updateChordBox(root, scaleName) {
-  const box = document.getElementById("codeBox");
-  box.innerHTML = "";
+    function drawFretboard(scaleNotes) {
+      const fb = document.getElementById("fretboard");
+      fb.innerHTML = "";
+      const tuning = instrument === "guitar"
+        ? ["E", "B", "G", "D", "A", "E"]
+        : ["G", "D", "A", "E"];
+      const arr = currentNoteArray();
 
-  // 現在のスケールの音を取得
-  const scaleNotes = getScaleNotes(root, scaleName); 
-  const s = scaleNotes.slice(0, 7); // 7音のみ使用
+      tuning.forEach(openNote => {
+        let openIdx = arr.indexOf(openNote);
+        for (let f = 0; f <= 24; f++) {
+          const note = arr[(openIdx + f) % 12];
+          const div = document.createElement("div");
+          div.className = "fret";
 
-  // 表の作成
-  const table = document.createElement("table");
-  table.className = "chord-table";
-  
-  // スケールごとの度数表記の定義
-  const majorDegrees = ["I", "IIm", "IIIm", "IV", "V", "VIm", "VIIm(b5)"];
-  const minorDegrees = ["Im", "IIm(b5)", "bIII", "IVm", "Vm", "bVI", "bVII"];
-  const degrees = (scaleName === "メジャー") ? majorDegrees : minorDegrees;
+          if (f === 0) {
+            div.classList.add("open");
+          }
 
-  // ヘッダー（度数）
-  const thead = document.createElement("thead");
-  const headerRow = document.createElement("tr");
-  degrees.forEach(deg => {
-    const th = document.createElement("th");
-    th.textContent = deg;
-    headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
+          // 音の判定
+          if (note === scaleNotes[0]) {
+            div.classList.add("root");
+            div.textContent = note;
+          } else if (scaleNotes.includes(note)) {
+            div.classList.add("in-scale");
+            div.textContent = note;
+          } else {
+            // 0フレット（開放弦）は常に音名を表示、それ以外は空白
+            div.textContent = (f === 0) ? note : "";
+          }
+          fb.appendChild(div);
+        }
+      });
+    }
 
-  // ボディ（コード名と構成音）
-  const tbody = document.createElement("tbody");
-  const dataRow = document.createElement("tr");
+    function drawPiano() {
+      const p = document.getElementById("piano");
+      p.innerHTML = "";
+      const white = ["C", "D", "E", "F", "G", "A", "B"];
+      const blackPos = { "C": "C#", "D": "D#", "F": "F#", "G": "G#", "A": "A#" };
+      white.forEach(w => {
+        const wk = document.createElement("div");
+        wk.className = "white-key";
+        wk.dataset.note = w;
+        p.appendChild(wk);
+        if (blackPos[w]) {
+          const bk = document.createElement("div");
+          bk.className = "black-key";
+          bk.dataset.note = blackPos[w];
+          wk.appendChild(bk);
+        }
+      });
+    }
 
-  s.forEach((chordRoot, i) => {
-    const td = document.createElement("td");
-    
-    // 構成音の計算
-    const third = s[(i + 2) % 7];
-    const fifth = s[(i + 4) % 7];
-    const notesStr = `${chordRoot} - ${third} - ${fifth}`;
+    function updatePiano(scaleNotes) {
+      const enharmonicMap = { "Db": "C#", "Eb": "D#", "Gb": "F#", "Ab": "G#", "Bb": "A#" };
+      const mappedNotes = scaleNotes.map(n => enharmonicMap[n] || n);
 
-    // コード名の作成
-    let suffix = "";
-    const deg = degrees[i];
-    if (deg.includes("m")) suffix = "m";
-    if (deg.includes("(b5)")) suffix = "dim"; // または m-5
+      document.querySelectorAll(".white-key, .black-key").forEach(k => {
+        k.classList.remove("highlight");
+        if (mappedNotes.includes(k.dataset.note)) {
+          k.classList.add("highlight");
+        }
+      });
+    }
 
-    const chordName = chordRoot + suffix;
+    function updateChordBox(root, scaleName) {
+      const box = document.getElementById("codeBox");
+      box.innerHTML = "";
 
-    td.innerHTML = `
+      if (scaleName === "ペンタトニック") {
+        box.innerHTML = "<p style='color:#666; font-size:13px; margin: 8px;'>構成音が5音のペンタトニックスケールではダイアトニックコードは表示されません。</p>";
+        return;
+      }
+
+      // 現在のスケールの音を取得
+      const scaleNotes = getScaleNotes(root, scaleName);
+      const s = scaleNotes.slice(0, 7); // 7音のみ使用
+
+      // 表の作成
+      const table = document.createElement("table");
+      table.className = "chord-table";
+
+      // スケールごとの度数表記の定義
+      const majorDegrees = ["I", "IIm", "IIIm", "IV", "V", "VIm", "VIIm(b5)"];
+      const minorDegrees = ["Im", "IIm(b5)", "bIII", "IVm", "Vm", "bVI", "bVII"];
+      const degrees = (scaleName === "メジャー") ? majorDegrees : minorDegrees;
+
+      // ヘッダー（度数）
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      degrees.forEach(deg => {
+        const th = document.createElement("th");
+        th.textContent = deg;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // ボディ（コード名と構成音）
+      const tbody = document.createElement("tbody");
+      const dataRow = document.createElement("tr");
+
+      s.forEach((chordRoot, i) => {
+        const td = document.createElement("td");
+
+        // 構成音の計算
+        const third = s[(i + 2) % 7];
+        const fifth = s[(i + 4) % 7];
+        const notesStr = `${chordRoot} - ${third} - ${fifth}`;
+
+        // コード名の作成
+        let suffix = "";
+        const deg = degrees[i];
+        if (deg.includes("m")) suffix = "m";
+        if (deg.includes("(b5)")) suffix = "dim"; // または m-5
+
+        const chordName = chordRoot + suffix;
+
+        td.innerHTML = `
       <span class="chord-name">${chordName}</span>
       <span class="notes-list">${notesStr}</span>
     `;
-    dataRow.appendChild(td);
-  });
+        dataRow.appendChild(td);
+      });
 
-  tbody.appendChild(dataRow);
-  table.appendChild(tbody);
-  box.appendChild(table);
-}
+      tbody.appendChild(dataRow);
+      table.appendChild(tbody);
+      box.appendChild(table);
+    }
 
-  function updateJapaneseKey(root, scaleName) {
-    const base = root.replace(/#|b/,"");
-    const jp = jpNames[base] || "";
-    const isMajor = (scaleName === "メジャー");
-    document.getElementById("japaneseKey").textContent =
-      jp + (isMajor ? "長調" : "短調");
-  }
+    function updateJapaneseKey(root, scaleName) {
+      const base = root.replace(/#|b/, "");
+      const jp = jpNames[base] || "";
+      const isMajor = (scaleName === "メジャー");
+      document.getElementById("japaneseKey").textContent =
+        jp + (isMajor ? "長調" : "短調");
+    }
 
-  function updateAccidentalButtonsUI() {
-    document.querySelectorAll("#accidentalButtons button").forEach(b => {
-      b.classList.toggle("active", b.dataset.type === accidental);
-    });
-  }
+    function updateAccidentalButtonsUI() {
+      document.querySelectorAll("#accidentalButtons button").forEach(b => {
+        b.classList.toggle("active", b.dataset.type === accidental);
+      });
+    }
 
-  function updateKeyCountButtonsUI() {
-    document.querySelectorAll("#keyCountButtons button").forEach(b => {
-      const c = Number(b.dataset.count);
-      b.classList.toggle("active", c === keyCount);
-    });
-  }
+    function updateKeyCountButtonsUI() {
+      document.querySelectorAll("#keyCountButtons button").forEach(b => {
+        const c = Number(b.dataset.count);
+        b.classList.toggle("active", c === keyCount);
+      });
+    }
 
-  function updateScaleButtonsUI() {
-    document.querySelectorAll("#scaleButtons button").forEach(b => {
-      b.classList.toggle("active", b.textContent === selectedScale);
-    });
-  }
+    function updateScaleButtonsUI() {
+      document.querySelectorAll("#scaleButtons button").forEach(b => {
+        b.classList.toggle("active", b.textContent === selectedScale);
+      });
+    }
 
-  function updateInstrumentButtonsUI() {
-    document.getElementById("guitarBtn").classList.toggle("active", instrument === "guitar");
-    document.getElementById("bassBtn").classList.toggle("active", instrument === "bass");
-  }
+    function updateInstrumentButtonsUI() {
+      document.getElementById("guitarBtn").classList.toggle("active", instrument === "guitar");
+      document.getElementById("bassBtn").classList.toggle("active", instrument === "bass");
+    }
 
-  function updateAll() {
-    updateAccidentalButtonsUI();
-    updateKeyCountButtonsUI();
-    updateScaleButtonsUI();
-    updateInstrumentButtonsUI();
-    const scaleNotes = getScaleNotes(selectedRoot, selectedScale);
-    drawFretboard(scaleNotes);
-    updatePiano(scaleNotes);
-    updateChordBox(selectedRoot, selectedScale);
-    updateJapaneseKey(selectedRoot, selectedScale);
-    const validKey = (accidental === "sharp" ? sharpKeys : flatKeys)[keyCount];
-    document.querySelectorAll("#rootButtons button").forEach(b => {
-      const n = b.dataset.note;
-      b.classList.remove("active","guide");
-      if (n === validKey) {
-        b.classList.add("active");
-      } else {
-        b.classList.add("guide");
-      }
-    });
-  }
-</script>
+    function updateAll() {
+      updateAccidentalButtonsUI();
+      updateKeyCountButtonsUI();
+      updateScaleButtonsUI();
+      updateInstrumentButtonsUI();
+      const scaleNotes = getScaleNotes(selectedRoot, selectedScale);
+      drawFretboard(scaleNotes);
+      updatePiano(scaleNotes);
+      updateChordBox(selectedRoot, selectedScale);
+      updateJapaneseKey(selectedRoot, selectedScale);
+      updateRootButtons();
+    }
+  </script>
 </body>
+
 </html>
