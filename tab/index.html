@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="テキストベースのギター・ベースTAB譜作成ツール。クリックとキーボードで簡単にTAB譜を作成し、テキストとしてエクスポートできます。">
+  <title>tab譜つくる君 - テキストTAB譜エディタ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Toolbar -->
+    <header class="toolbar">
+      <div class="toolbar-brand">
+        <div class="toolbar-brand-text">
+          <a class="home-link" href="../">ガーデニングツール</a>
+          <h1>tab譜つくる君</h1>
+        </div>
+        <span class="toolbar-subtitle">テキストTAB譜エディタ</span>
+      </div>
+      <div class="toolbar-center">
+        <div class="instrument-switch">
+          <button class="instrument-btn" data-instrument="guitar" id="btn-guitar">
+            <span class="instrument-icon">🎸</span> Guitar
+          </button>
+          <button class="instrument-btn active" data-instrument="bass" id="btn-bass">
+            <span class="instrument-icon">🎸</span> Bass
+          </button>
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        <button class="action-btn" id="btn-save" title="プロジェクトをJSON保存">
+          <span class="btn-icon">💾</span> 保存
+        </button>
+        <button class="action-btn" id="btn-load" title="JSONプロジェクトを読込">
+          <span class="btn-icon">📂</span> 読込
+        </button>
+        <input type="file" id="file-input" accept=".json" hidden>
+      </div>
+    </header>
+
+    <!-- Project info -->
+    <div class="project-bar">
+      <div class="field">
+        <label for="project-title">曲名</label>
+        <input type="text" id="project-title" placeholder="曲名を入力...">
+      </div>
+      <div class="field">
+        <label for="project-artist">アーティスト</label>
+        <input type="text" id="project-artist" placeholder="アーティスト名...">
+      </div>
+      <div class="field field-small">
+        <label for="project-tempo">テンポ</label>
+        <input type="text" id="project-tempo" placeholder="BPM">
+      </div>
+    </div>
+
+    <!-- Toggle bar -->
+    <div class="toggle-bar">
+      <div class="toggle-group">
+        <span class="toggle-group-label">表示:</span>
+        <label class="toggle-label">
+          <input type="checkbox" id="toggle-section" checked>
+          <span class="toggle-text">セクション</span>
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="toggle-chord" checked>
+          <span class="toggle-text">コード</span>
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="toggle-lyrics" checked>
+          <span class="toggle-text">歌詞</span>
+        </label>
+      </div>
+      <div class="toggle-group">
+        <span class="toggle-group-label">新規段:</span>
+        <label class="setting-label">
+          小節数
+          <select id="measures-per-system">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
+          </select>
+        </label>
+        <label class="setting-label">
+          拍数/小節
+          <select id="beats-per-measure">
+            <option value="4">4</option>
+            <option value="6">6</option>
+            <option value="8" selected>8</option>
+            <option value="16">16</option>
+          </select>
+        </label>
+        <button class="action-btn accent" id="btn-add-system">＋ 段を追加</button>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span id="status-cursor" class="status-item">カーソル: ---</span>
+      <span class="status-item status-hint">矢印キー: 移動 / 数字: フレット入力（2桁対応） / S: スライド / Delete: 消去 / Esc: 選択解除</span>
+    </div>
+
+    <!-- Editor area -->
+    <main class="editor-area" id="editor-area">
+      <!-- Systems rendered by JavaScript -->
+    </main>
+
+    <!-- Export panel -->
+    <section class="export-panel">
+      <div class="export-header">
+        <h2>テキスト出力</h2>
+        <div class="export-options">
+          <label class="toggle-label">
+            <input type="checkbox" id="export-labels" checked>
+            <span class="toggle-text">弦名表示</span>
+          </label>
+        </div>
+        <div class="export-buttons">
+          <button class="action-btn accent" id="btn-export">📝 テキスト生成</button>
+          <button class="action-btn" id="btn-copy">📋 コピー</button>
+        </div>
+      </div>
+      <textarea id="export-output" readonly placeholder="「テキスト生成」ボタンを押すと、ここにTAB譜がテキストとして出力されます。&#10;コピーして掲示板やテキストファイルに貼り付けられます。"></textarea>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="画像のPDF化、PDFの結合・並べ替えができるWebツール">
+  <title>PDFくっつけ君 — 画像変換・PDF結合ツール</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #e8e8e8;
+      --bg-dark: #d1d1d1;
+      --bg-light: #f5f5f5;
+      --surface: #e0e0e0;
+      --text-primary: #1a1a1a;
+      --text-secondary: #555;
+      --text-muted: #888;
+      --accent: #00c8ff;
+      --accent-glow: rgba(0, 200, 255, 0.4);
+      --accent-glow-strong: rgba(0, 200, 255, 0.7);
+      --shadow-dark: rgba(0, 0, 0, 0.25);
+      --shadow-light: rgba(255, 255, 255, 0.8);
+      --neu-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+      --neu-shadow-sm: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+      --neu-inset: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== Header ===== */
+    .home-link {
+      display: inline-block;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 6px;
+    }
+
+    .home-link:hover {
+      color: var(--text-primary);
+    }
+
+    .header {
+      padding: 28px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: var(--neu-shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .logo-icon::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 13px;
+      border: 1.5px solid transparent;
+      background: linear-gradient(135deg, var(--accent), transparent 60%) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+
+    .logo-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--text-primary);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .logo h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo h1 span {
+      font-weight: 300;
+      color: var(--text-secondary);
+      margin-left: 6px;
+      font-size: 14px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* ===== Layout ===== */
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 40px 60px;
+    }
+
+    /* ===== Neumorphic Components ===== */
+    .neu-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--neu-shadow);
+      padding: 28px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+
+
+    .neu-btn {
+      background: var(--surface);
+      border: none;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--neu-shadow-sm);
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .neu-btn:hover {
+      box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+    }
+
+    .neu-btn:active {
+      box-shadow: var(--neu-inset);
+    }
+
+    .neu-btn.primary {
+      color: var(--text-primary);
+      border: 1.5px solid var(--accent);
+      box-shadow: var(--neu-shadow-sm), 0 0 12px var(--accent-glow);
+    }
+
+    .neu-btn.primary:hover {
+      box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light), 0 0 20px var(--accent-glow-strong);
+    }
+
+    .neu-btn.primary:active {
+      box-shadow: var(--neu-inset), 0 0 12px var(--accent-glow);
+    }
+
+    .neu-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .neu-btn.primary svg {
+      stroke: var(--accent);
+      filter: drop-shadow(0 0 4px var(--accent-glow));
+    }
+
+    /* ===== Section Headers ===== */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 0 6px var(--accent-glow);
+    }
+
+    .section-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* ===== Drop Zone ===== */
+    .dropzone {
+      border: 2px dashed #bbb;
+      border-radius: var(--radius);
+      padding: 50px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--surface);
+      box-shadow: var(--neu-inset);
+      position: relative;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--accent);
+      box-shadow: var(--neu-inset), 0 0 20px var(--accent-glow);
+    }
+
+    .dropzone.dragover::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: var(--radius);
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 30px var(--accent-glow-strong);
+      animation: pulse-glow 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    .dropzone-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      stroke: var(--text-muted);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: var(--transition);
+    }
+
+    .dropzone:hover .dropzone-icon,
+    .dropzone.dragover .dropzone-icon {
+      stroke: var(--accent);
+      filter: drop-shadow(0 0 8px var(--accent-glow));
+    }
+
+    .dropzone-text {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .dropzone-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    /* ===== Settings Bar ===== */
+    .settings-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .setting-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .setting-group label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .neu-select {
+      appearance: none;
+      background: var(--surface);
+      border: 1px solid #ccc;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--neu-inset);
+      padding: 10px 36px 10px 14px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: var(--transition);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    .neu-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: var(--neu-inset), 0 0 8px var(--accent-glow);
+    }
+
+    .neu-input {
+      background: var(--surface);
+      border: 1px solid #ccc;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--neu-inset);
+      padding: 10px 14px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text-primary);
+      width: 80px;
+      transition: var(--transition);
+    }
+
+    .neu-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: var(--neu-inset), 0 0 8px var(--accent-glow);
+    }
+
+    .custom-size-inputs {
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .custom-size-inputs.visible {
+      display: flex;
+    }
+
+    .custom-size-inputs span {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ===== File List ===== */
+    .file-list {
+      min-height: 80px;
+    }
+
+    .file-list-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--neu-shadow-sm);
+      margin-bottom: 10px;
+      cursor: grab;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .file-item:active {
+      cursor: grabbing;
+    }
+
+    .file-item:hover {
+      box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+    }
+
+    .file-item.sortable-chosen {
+      box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light), 0 0 16px var(--accent-glow);
+      border: 1px solid var(--accent);
+      z-index: 10;
+    }
+
+    .file-item.sortable-ghost {
+      opacity: 0.3;
+    }
+
+    .file-item-handle {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      cursor: grab;
+      padding: 4px;
+      flex-shrink: 0;
+    }
+
+    .file-item-handle span {
+      display: block;
+      width: 16px;
+      height: 2px;
+      background: #bbb;
+      border-radius: 1px;
+    }
+
+    .file-item-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow: var(--neu-inset);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .file-item-thumb img,
+    .file-item-thumb canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .file-item-thumb .pdf-icon {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .file-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-item-name {
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-item-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .file-item-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--surface);
+      box-shadow: var(--neu-inset);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .file-item-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .file-item-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 2px 2px 4px var(--shadow-dark), -2px -2px 4px var(--shadow-light);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .file-item-btn:hover {
+      box-shadow: 1px 1px 2px var(--shadow-dark), -1px -1px 2px var(--shadow-light);
+    }
+
+    .file-item-btn:active {
+      box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
+    }
+
+    .file-item-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--text-muted);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .file-item-btn.delete:hover svg {
+      stroke: #e55;
+    }
+
+    .file-item-btn.move-up:hover svg,
+    .file-item-btn.move-down:hover svg {
+      stroke: var(--accent);
+      filter: drop-shadow(0 0 4px var(--accent-glow));
+    }
+
+    /* ===== Bottom Action Bar ===== */
+    .action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .file-count {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .file-count strong {
+      color: var(--text-primary);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* ===== Progress Overlay ===== */
+    .progress-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .progress-overlay.visible {
+      display: flex;
+    }
+
+    .progress-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--neu-shadow), 0 0 40px var(--accent-glow);
+      padding: 40px 50px;
+      text-align: center;
+      min-width: 320px;
+      border: 1px solid rgba(0, 200, 255, 0.2);
+    }
+
+    .progress-spinner {
+      width: 56px;
+      height: 56px;
+      border: 3px solid var(--bg-dark);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      animation: spin 0.8s linear infinite;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .progress-text {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .progress-detail {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ===== Toast Notification ===== */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 14px 24px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--neu-shadow), 0 0 16px var(--accent-glow);
+      border-left: 3px solid var(--accent);
+      font-size: 14px;
+      z-index: 2000;
+      transform: translateX(120%);
+      opacity: 0;
+      visibility: hidden;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s, visibility 0.4s;
+    }
+
+    .toast.visible {
+      transform: translateX(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .toast.error {
+      border-left-color: #e55;
+      box-shadow: var(--neu-shadow), 0 0 16px rgba(238, 85, 85, 0.3);
+    }
+
+    /* ===== Orientation Toggle ===== */
+    .orientation-toggle {
+      display: flex;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      box-shadow: var(--neu-inset);
+    }
+
+    .orientation-toggle button {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .orientation-toggle button.active {
+      background: var(--surface);
+      box-shadow: var(--neu-shadow-sm);
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--accent);
+    }
+
+
+
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+      .header {
+        padding: 20px;
+      }
+      .app-container {
+        padding: 0 20px 40px;
+      }
+      .neu-card {
+        padding: 20px;
+      }
+      .dropzone {
+        padding: 30px 20px;
+      }
+      .settings-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .action-bar {
+        flex-direction: column;
+      }
+    }
+
+    /* ===== Animations ===== */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .file-item {
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    /* ===== Scrollbar ===== */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #bbb;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <line x1="9" y1="15" x2="12" y2="12"/>
+          <line x1="15" y1="15" x2="12" y2="12"/>
+        </svg>
+      </div>
+      <div>
+        <a class="home-link" href="../">ガーデニングツール</a>
+        <h1>PDFくっつけ君<span>画像変換・PDF結合ツール</span></h1>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <!-- Drop Zone -->
+    <div class="neu-card">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="dot"></div>
+          ファイルを追加
+        </div>
+        <span class="section-subtitle">画像 (PNG, JPG, WEBP, GIF, BMP) または PDF</span>
+      </div>
+      <div class="dropzone" id="dropzone">
+        <svg class="dropzone-icon" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <div class="dropzone-text">ファイルをドラッグ＆ドロップ、またはクリックして選択</div>
+        <div class="dropzone-hint">複数ファイルを同時に追加できます</div>
+      </div>
+      <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,application/pdf">
+    </div>
+
+    <!-- Settings -->
+    <div class="neu-card">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="dot"></div>
+          出力設定
+        </div>
+      </div>
+      <div class="settings-bar">
+        <div class="setting-group">
+          <label>ページサイズ:</label>
+          <select class="neu-select" id="pageSize">
+            <option value="a4">A4 (210 × 297 mm)</option>
+            <option value="a3">A3 (297 × 420 mm)</option>
+            <option value="a5">A5 (148 × 210 mm)</option>
+            <option value="b4">B4 (250 × 353 mm)</option>
+            <option value="b5">B5 (176 × 250 mm)</option>
+            <option value="letter">Letter (215.9 × 279.4 mm)</option>
+            <option value="legal">Legal (215.9 × 355.6 mm)</option>
+            <option value="original">元画像サイズ</option>
+            <option value="custom">カスタム</option>
+          </select>
+        </div>
+
+        <div class="custom-size-inputs" id="customSizeInputs">
+          <label>幅:</label>
+          <input type="number" class="neu-input" id="customWidth" value="210" min="10" max="2000">
+          <span>×</span>
+          <label>高さ:</label>
+          <input type="number" class="neu-input" id="customHeight" value="297" min="10" max="2000">
+          <span>mm</span>
+        </div>
+
+        <div class="setting-group">
+          <label>向き:</label>
+          <div class="orientation-toggle">
+            <button class="active" data-orient="portrait" id="orientPortrait">縦</button>
+            <button data-orient="landscape" id="orientLandscape">横</button>
+          </div>
+        </div>
+
+
+
+        <div class="setting-group">
+          <label>余白:</label>
+          <input type="number" class="neu-input" id="marginInput" value="0" min="0" max="100">
+          <span style="font-size:13px;color:var(--text-muted)">mm</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- File List -->
+    <div class="neu-card">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="dot"></div>
+          ファイル一覧
+          <span class="section-subtitle" id="fileCountLabel" style="margin-left: 8px;"></span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="neu-btn" id="clearAllBtn" style="display:none;">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            すべて削除
+          </button>
+        </div>
+      </div>
+      <div class="file-list-empty" id="emptyState">
+        ファイルが追加されていません。上のエリアからファイルを追加してください。
+      </div>
+      <div class="file-list" id="fileList"></div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="neu-card">
+      <div class="action-bar">
+        <div class="file-count" id="summaryText">
+          ファイルを追加するとここに概要が表示されます
+        </div>
+        <div class="action-buttons">
+          <button class="neu-btn primary" id="generateBtn" disabled>
+            <svg viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            PDFを生成
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Overlay -->
+  <div class="progress-overlay" id="progressOverlay">
+    <div class="progress-card">
+      <div class="progress-spinner"></div>
+      <div class="progress-text" id="progressText">処理中...</div>
+      <div class="progress-detail" id="progressDetail">ファイルを読み込んでいます</div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Initialize pdf.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // ===== State =====
+    const state = {
+      files: [], // { id, name, type, size, data (ArrayBuffer), thumbUrl, pageCount }
+      orientation: 'portrait',
+    };
+
+    let fileIdCounter = 0;
+
+    // ===== DOM Elements =====
+    const $ = (sel) => document.querySelector(sel);
+    const dropzone = $('#dropzone');
+    const fileInput = $('#fileInput');
+    const fileList = $('#fileList');
+    const emptyState = $('#emptyState');
+    const clearAllBtn = $('#clearAllBtn');
+    const generateBtn = $('#generateBtn');
+    const summaryText = $('#summaryText');
+    const fileCountLabel = $('#fileCountLabel');
+    const pageSizeSelect = $('#pageSize');
+    const customSizeInputs = $('#customSizeInputs');
+    const progressOverlay = $('#progressOverlay');
+    const progressText = $('#progressText');
+    const progressDetail = $('#progressDetail');
+    const toast = $('#toast');
+
+    // ===== Page Sizes (in points, 1mm = 2.83465 points) =====
+    const MM = 2.83465;
+    const PAGE_SIZES = {
+      a4: [210 * MM, 297 * MM],
+      a3: [297 * MM, 420 * MM],
+      a5: [148 * MM, 210 * MM],
+      b4: [250 * MM, 353 * MM],
+      b5: [176 * MM, 250 * MM],
+      letter: [215.9 * MM, 279.4 * MM],
+      legal: [215.9 * MM, 355.6 * MM],
+    };
+
+    // ===== Drop Zone =====
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+      fileInput.value = '';
+    });
+
+    // ===== File Handling =====
+    async function handleFiles(fileListInput) {
+      const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/bmp', 'application/pdf'];
+      const newFiles = [];
+
+      for (const file of fileListInput) {
+        if (!validTypes.includes(file.type)) {
+          showToast(`「${file.name}」はサポートされていない形式です`, true);
+          continue;
+        }
+
+        const data = await file.arrayBuffer();
+        const entry = {
+          id: ++fileIdCounter,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: data,
+          thumbUrl: null,
+          pageCount: 1,
+        };
+
+        if (file.type === 'application/pdf') {
+          try {
+            const pdf = await pdfjsLib.getDocument({ data: data.slice(0) }).promise;
+            entry.pageCount = pdf.numPages;
+            // Render first page thumbnail
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 0.3 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            entry.thumbUrl = canvas.toDataURL();
+          } catch (err) {
+            console.error('PDF thumbnail error:', err);
+          }
+        } else {
+          const blob = new Blob([data], { type: file.type });
+          entry.thumbUrl = URL.createObjectURL(blob);
+        }
+
+        newFiles.push(entry);
+      }
+
+      state.files.push(...newFiles);
+      renderFileList();
+      updateSummary();
+    }
+
+    // ===== Render File List =====
+    function renderFileList() {
+      // Clear all file items from the list
+      fileList.innerHTML = '';
+
+      if (state.files.length === 0) {
+        emptyState.style.display = 'block';
+        fileList.style.display = 'none';
+        clearAllBtn.style.display = 'none';
+        generateBtn.disabled = true;
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      fileList.style.display = 'block';
+      clearAllBtn.style.display = 'flex';
+      generateBtn.disabled = false;
+
+      state.files.forEach((file, idx) => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.dataset.id = String(file.id);
+
+        const sizeStr = formatSize(file.size);
+        const typeStr = file.type === 'application/pdf' ? `PDF — ${file.pageCount}ページ` : file.type.split('/')[1].toUpperCase();
+
+        item.innerHTML = `
+          <div class="file-item-handle">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="file-item-number">${idx + 1}</div>
+          <div class="file-item-thumb">
+            ${file.thumbUrl ? `<img src="${file.thumbUrl}" alt="${escapeHtml(file.name)}">` : `<div class="pdf-icon">PDF</div>`}
+          </div>
+          <div class="file-item-info">
+            <div class="file-item-name">${escapeHtml(file.name)}</div>
+            <div class="file-item-meta">
+              <span>${typeStr}</span>
+              <span>${sizeStr}</span>
+            </div>
+          </div>
+          <div class="file-item-actions">
+            <button class="file-item-btn move-up" title="上に移動" data-action="move-up" data-id="${file.id}">
+              <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+            <button class="file-item-btn move-down" title="下に移動" data-action="move-down" data-id="${file.id}">
+              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="file-item-btn delete" title="削除" data-action="delete" data-id="${file.id}">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        `;
+
+        fileList.appendChild(item);
+      });
+
+      // Init sortable - fileList now contains ONLY .file-item elements
+      if (fileList._sortable) fileList._sortable.destroy();
+      fileList._sortable = new Sortable(fileList, {
+        animation: 200,
+        handle: '.file-item-handle',
+        draggable: '.file-item',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: (evt) => {
+          const oldIdx = evt.oldIndex;
+          const newIdx = evt.newIndex;
+          if (oldIdx === newIdx) return;
+          // Move the item in state.files to match the new DOM order
+          const moved = state.files.splice(oldIdx, 1)[0];
+          state.files.splice(newIdx, 0, moved);
+          renderFileList();
+          updateSummary();
+        },
+      });
+    }
+
+    // ===== Event Delegation for file item buttons =====
+    fileList.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = parseInt(btn.dataset.id, 10);
+      const action = btn.dataset.action;
+      if (action === 'delete') removeFile(id);
+      else if (action === 'move-up') moveFile(id, -1);
+      else if (action === 'move-down') moveFile(id, 1);
+    });
+
+    // ===== File Actions =====
+    function removeFile(id) {
+      state.files = state.files.filter(f => f.id !== id);
+      renderFileList();
+      updateSummary();
+    }
+
+    function moveFile(id, direction) {
+      const idx = state.files.findIndex(f => f.id === id);
+      const newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= state.files.length) return;
+      [state.files[idx], state.files[newIdx]] = [state.files[newIdx], state.files[idx]];
+      renderFileList();
+    }
+
+    clearAllBtn.addEventListener('click', () => {
+      state.files = [];
+      renderFileList();
+      updateSummary();
+    });
+
+    // ===== Settings =====
+    pageSizeSelect.addEventListener('change', () => {
+      customSizeInputs.classList.toggle('visible', pageSizeSelect.value === 'custom');
+    });
+
+    // Orientation
+    document.querySelectorAll('.orientation-toggle button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.orientation-toggle button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.orientation = btn.dataset.orient;
+      });
+    });
+
+
+
+    // ===== Summary =====
+    function updateSummary() {
+      const count = state.files.length;
+      const images = state.files.filter(f => f.type !== 'application/pdf').length;
+      const pdfs = state.files.filter(f => f.type === 'application/pdf').length;
+      const totalPages = state.files.reduce((sum, f) => sum + f.pageCount, 0);
+      const totalSize = state.files.reduce((sum, f) => sum + f.size, 0);
+
+      fileCountLabel.textContent = count > 0 ? `${count} ファイル` : '';
+
+      if (count === 0) {
+        summaryText.textContent = 'ファイルを追加するとここに概要が表示されます';
+      } else {
+        const parts = [];
+        if (images > 0) parts.push(`画像 ${images}枚`);
+        if (pdfs > 0) parts.push(`PDF ${pdfs}ファイル`);
+        summaryText.innerHTML = `<strong>${count}ファイル</strong> — ${parts.join('、')} — 合計${totalPages}ページ — ${formatSize(totalSize)}`;
+      }
+    }
+
+    // ===== Generate PDF =====
+    generateBtn.addEventListener('click', generatePDF);
+
+    async function generatePDF() {
+      if (state.files.length === 0) return;
+
+      showProgress('PDFを生成しています...', '準備中');
+
+      try {
+        const pdfDoc = await PDFLib.PDFDocument.create();
+        const total = state.files.length;
+        const margin = parseFloat($('#marginInput').value || 0) * MM;
+
+        for (let i = 0; i < total; i++) {
+          const file = state.files[i];
+          updateProgress(`PDFを生成しています...`, `${i + 1} / ${total}: ${file.name}`);
+
+          if (file.type === 'application/pdf') {
+            // Embed PDF pages
+            try {
+              const srcDoc = await PDFLib.PDFDocument.load(file.data);
+              const pages = await pdfDoc.copyPages(srcDoc, srcDoc.getPageIndices());
+              pages.forEach(page => pdfDoc.addPage(page));
+            } catch (err) {
+              console.error('Error embedding PDF:', err);
+              showToast(`「${file.name}」の読み込みに失敗しました`, true);
+            }
+          } else {
+            // Embed image
+            try {
+              const pageSize = getPageSize();
+              const [pageW, pageH] = pageSize;
+              const page = pdfDoc.addPage(pageSize);
+
+              let image;
+              const uint8 = new Uint8Array(file.data);
+
+              if (file.type === 'image/png') {
+                image = await pdfDoc.embedPng(uint8);
+              } else if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+                image = await pdfDoc.embedJpg(uint8);
+              } else {
+                // Convert other formats to PNG via canvas
+                const blob = new Blob([file.data], { type: file.type });
+                const bmpUrl = URL.createObjectURL(blob);
+                const img = await loadImage(bmpUrl);
+                URL.revokeObjectURL(bmpUrl);
+
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                const pngDataUrl = canvas.toDataURL('image/png');
+                const pngData = dataUrlToUint8Array(pngDataUrl);
+                image = await pdfDoc.embedPng(pngData);
+              }
+
+              const imgW = image.width;
+              const imgH = image.height;
+
+              // Handle "original" page size
+              if (pageSizeSelect.value === 'original') {
+                page.setSize(imgW + margin * 2, imgH + margin * 2);
+                page.drawImage(image, {
+                  x: margin,
+                  y: margin,
+                  width: imgW,
+                  height: imgH,
+                });
+              } else {
+                const drawW = pageW - margin * 2;
+                const drawH = pageH - margin * 2;
+                const dims = calculateImageDimensions(imgW, imgH, drawW, drawH, 'contain');
+
+                page.drawImage(image, {
+                  x: margin + (drawW - dims.width) / 2,
+                  y: margin + (drawH - dims.height) / 2,
+                  width: dims.width,
+                  height: dims.height,
+                });
+              }
+            } catch (err) {
+              console.error('Error embedding image:', err);
+              showToast(`「${file.name}」の処理に失敗しました`, true);
+            }
+          }
+        }
+
+        updateProgress('保存しています...', 'ダウンロードの準備');
+
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = generateFileName();
+        a.click();
+
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        hideProgress();
+        showToast('PDFが正常に生成されました！');
+      } catch (err) {
+        console.error('PDF generation error:', err);
+        hideProgress();
+        showToast('PDF生成中にエラーが発生しました。', true);
+      }
+    }
+
+    // ===== Helpers =====
+    function getPageSize() {
+      const sizeKey = pageSizeSelect.value;
+
+      if (sizeKey === 'custom') {
+        const w = parseFloat($('#customWidth').value || 210) * MM;
+        const h = parseFloat($('#customHeight').value || 297) * MM;
+        return state.orientation === 'landscape' ? [h, w] : [w, h];
+      }
+
+      if (sizeKey === 'original') {
+        // Will be overridden per image
+        return [210 * MM, 297 * MM];
+      }
+
+      const [w, h] = PAGE_SIZES[sizeKey];
+      return state.orientation === 'landscape' ? [h, w] : [w, h];
+    }
+
+    function calculateImageDimensions(imgW, imgH, maxW, maxH, fitMode) {
+      if (fitMode === 'stretch') {
+        return { width: maxW, height: maxH };
+      }
+
+      const imgRatio = imgW / imgH;
+      const areaRatio = maxW / maxH;
+
+      if (fitMode === 'contain') {
+        if (imgRatio > areaRatio) {
+          return { width: maxW, height: maxW / imgRatio };
+        } else {
+          return { width: maxH * imgRatio, height: maxH };
+        }
+      }
+
+      if (fitMode === 'cover') {
+        if (imgRatio > areaRatio) {
+          return { width: maxH * imgRatio, height: maxH };
+        } else {
+          return { width: maxW, height: maxW / imgRatio };
+        }
+      }
+
+      return { width: maxW, height: maxH };
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    function dataUrlToUint8Array(dataUrl) {
+      const base64 = dataUrl.split(',')[1];
+      const binary = atob(base64);
+      const array = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        array[i] = binary.charCodeAt(i);
+      }
+      return array;
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function escapeHtml(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    function generateFileName() {
+      const now = new Date();
+      const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+      return `merged_${ts}.pdf`;
+    }
+
+    // ===== Progress & Toast =====
+    function showProgress(text, detail) {
+      progressText.textContent = text;
+      progressDetail.textContent = detail;
+      progressOverlay.classList.add('visible');
+    }
+
+    function updateProgress(text, detail) {
+      progressText.textContent = text;
+      progressDetail.textContent = detail;
+    }
+
+    function hideProgress() {
+      progressOverlay.classList.remove('visible');
+    }
+
+    let toastTimer;
+    function showToast(message, isError = false) {
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.className = 'toast' + (isError ? ' error' : '');
+      requestAnimationFrame(() => {
+        toast.classList.add('visible');
+      });
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('visible');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
