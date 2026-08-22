@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="JPEG・PNG・WebPの画像形式をブラウザ内で相互変換できるWebツール">
+  <title>画像変える君 — 画像形式変換ツール</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #e8e8e8;
+      --surface: #e0e0e0;
+      --text-primary: #1a1a1a;
+      --text-secondary: #555;
+      --text-muted: #888;
+      --accent: #5d7a4a;
+      --accent-glow: rgba(93, 122, 74, 0.35);
+      --accent-glow-strong: rgba(93, 122, 74, 0.55);
+      --shadow-dark: rgba(0, 0, 0, 0.25);
+      --shadow-light: rgba(255, 255, 255, 0.8);
+      --neu-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+      --neu-shadow-sm: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+      --neu-inset: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .home-link {
+      display: inline-block;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 6px;
+    }
+
+    .home-link:hover {
+      color: var(--text-primary);
+    }
+
+    .header {
+      padding: 28px 40px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: var(--neu-shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .logo h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo h1 span {
+      font-weight: 300;
+      color: var(--text-secondary);
+      margin-left: 6px;
+      font-size: 14px;
+    }
+
+    .app-container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 40px 60px;
+    }
+
+    .neu-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--neu-shadow);
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 0 6px var(--accent-glow);
+    }
+
+    .section-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .dropzone {
+      border: 2px dashed #bbb;
+      border-radius: var(--radius);
+      padding: 48px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--surface);
+      box-shadow: var(--neu-inset);
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--accent);
+      box-shadow: var(--neu-inset), 0 0 20px var(--accent-glow);
+    }
+
+    .dropzone-icon {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 14px;
+      stroke: var(--text-muted);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: var(--transition);
+    }
+
+    .dropzone:hover .dropzone-icon,
+    .dropzone.dragover .dropzone-icon {
+      stroke: var(--accent);
+    }
+
+    .dropzone-text {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .dropzone-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .settings-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .setting-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .setting-group label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .format-toggle {
+      display: flex;
+      gap: 8px;
+    }
+
+    .format-toggle button {
+      background: var(--surface);
+      border: 1px solid #ccc;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--neu-shadow-sm);
+      padding: 10px 18px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .format-toggle button:hover {
+      color: var(--text-primary);
+    }
+
+    .format-toggle button.active {
+      color: var(--text-primary);
+      border-color: var(--accent);
+      box-shadow: var(--neu-shadow-sm), 0 0 10px var(--accent-glow);
+    }
+
+    .quality-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .quality-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+    }
+
+    .quality-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      min-width: 42px;
+      text-align: right;
+    }
+
+    .quality-row.hidden {
+      display: none;
+    }
+
+    .privacy-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+
+    .file-list-empty {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--neu-shadow-sm);
+      margin-bottom: 10px;
+    }
+
+    .file-item-thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #d5d5d5;
+      box-shadow: var(--neu-inset);
+    }
+
+    .file-item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .file-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-item-name {
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-item-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .file-item-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      color: var(--text-muted);
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+
+    .file-item-remove:hover {
+      color: #c0392b;
+      background: rgba(192, 57, 43, 0.08);
+    }
+
+    .file-item-remove svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    .action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .summary-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .neu-btn {
+      background: var(--surface);
+      border: none;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--neu-shadow-sm);
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .neu-btn:hover:not(:disabled) {
+      box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+    }
+
+    .neu-btn:active:not(:disabled) {
+      box-shadow: var(--neu-inset);
+    }
+
+    .neu-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .neu-btn.primary {
+      border: 1.5px solid var(--accent);
+      box-shadow: var(--neu-shadow-sm), 0 0 12px var(--accent-glow);
+    }
+
+    .neu-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .progress-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .progress-overlay.visible {
+      display: flex;
+    }
+
+    .progress-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--neu-shadow);
+      padding: 36px 48px;
+      text-align: center;
+      min-width: 260px;
+    }
+
+    .progress-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #ccc;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .progress-text {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .progress-detail {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--text-primary);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      z-index: 200;
+      pointer-events: none;
+    }
+
+    .toast.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 640px) {
+      .header,
+      .app-container {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      .format-toggle {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </div>
+      <div>
+        <a class="home-link" href="../">ガーデニングツール</a>
+        <h1>画像変える君<span>JPEG / PNG / WebP 変換</span></h1>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <div class="neu-card">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="dot"></div>
+          ファイルを追加
+        </div>
+        <span class="section-subtitle">PNG, JPEG, WebP</span>
+      </div>
+      <div class="dropzone" id="dropzone">
+        <svg class="dropzone-icon" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <div class="dropzone-text">画像をドラッグ＆ドロップ、またはクリックして選択</div>
+        <div class="dropzone-hint">複数ファイルを同時に追加できます</div>
+      </div>
+      <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp">
+      <p class="privacy-note">すべてブラウザ内で処理されます。画像はサーバーに送信されません。</p>
+    </div>
+
+    <div class="neu-card">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="dot"></div>
+          出力設定
+        </div>
+      </div>
+      <div class="settings-bar">
+        <div class="setting-group">
+          <label>出力形式:</label>
+          <div class="format-toggle" id="formatToggle">
+            <button type="button" data-format="image/png" class="active">PNG</button>
+            <button type="button" data-format="image/jpeg">JPEG</button>
+            <button type="button" data-format="image/webp">WebP</button>
+          </div>
+        </div>
+        <div class="setting-group quality-row hidden" id="qualityRow">
+          <label for="qualityInput">品質:</label>
+          <input type="range" id="qualityInput" min="10" max="100" value="90">
+          <span class="quality-value" id="qualityValue">90%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="neu-card">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="dot"></div>
+          ファイル一覧
+          <span class="section-subtitle" id="fileCountLabel"></span>
+        </div>
+        <button class="neu-btn" id="clearAllBtn" style="display:none;">すべて削除</button>
+      </div>
+      <div class="file-list-empty" id="emptyState">
+        ファイルが追加されていません。上のエリアから画像を追加してください。
+      </div>
+      <div id="fileList"></div>
+    </div>
+
+    <div class="neu-card">
+      <div class="action-bar">
+        <div class="summary-text" id="summaryText">画像を追加するとここに概要が表示されます</div>
+        <div class="action-buttons">
+          <button class="neu-btn primary" id="convertBtn" disabled>
+            <svg viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            変換してダウンロード
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-overlay" id="progressOverlay">
+    <div class="progress-card">
+      <div class="progress-spinner"></div>
+      <div class="progress-text" id="progressText">変換中...</div>
+      <div class="progress-detail" id="progressDetail"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const ACCEPTED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+    const EXT_BY_MIME = {
+      'image/png': 'png',
+      'image/jpeg': 'jpg',
+      'image/webp': 'webp',
+    };
+    const LABEL_BY_MIME = {
+      'image/png': 'PNG',
+      'image/jpeg': 'JPEG',
+      'image/webp': 'WebP',
+    };
+
+    const state = {
+      files: [],
+      outputFormat: 'image/png',
+      quality: 90,
+    };
+
+    let fileIdCounter = 0;
+
+    const $ = (sel) => document.querySelector(sel);
+    const dropzone = $('#dropzone');
+    const fileInput = $('#fileInput');
+    const fileList = $('#fileList');
+    const emptyState = $('#emptyState');
+    const clearAllBtn = $('#clearAllBtn');
+    const convertBtn = $('#convertBtn');
+    const summaryText = $('#summaryText');
+    const fileCountLabel = $('#fileCountLabel');
+    const formatToggle = $('#formatToggle');
+    const qualityRow = $('#qualityRow');
+    const qualityInput = $('#qualityInput');
+    const qualityValue = $('#qualityValue');
+    const progressOverlay = $('#progressOverlay');
+    const progressText = $('#progressText');
+    const progressDetail = $('#progressDetail');
+    const toast = $('#toast');
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('visible');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => toast.classList.remove('visible'), 2800);
+    }
+
+    function detectMime(file) {
+      if (ACCEPTED_TYPES.has(file.type)) return file.type;
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'png') return 'image/png';
+      if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+      if (ext === 'webp') return 'image/webp';
+      return null;
+    }
+
+    function outputBaseName(name) {
+      return name.replace(/\.[^.]+$/, '') || name;
+    }
+
+    function buildOutputName(name, mime) {
+      return `${outputBaseName(name)}.${EXT_BY_MIME[mime]}`;
+    }
+
+    function updateQualityVisibility() {
+      const needsQuality = state.outputFormat !== 'image/png';
+      qualityRow.classList.toggle('hidden', !needsQuality);
+    }
+
+    function updateUI() {
+      const count = state.files.length;
+      const hasFiles = count > 0;
+
+      emptyState.style.display = hasFiles ? 'none' : 'block';
+      fileList.style.display = hasFiles ? 'block' : 'none';
+      clearAllBtn.style.display = hasFiles ? 'inline-flex' : 'none';
+      convertBtn.disabled = !hasFiles;
+      fileCountLabel.textContent = hasFiles ? `（${count}件）` : '';
+
+      if (!hasFiles) {
+        summaryText.textContent = '画像を追加するとここに概要が表示されます';
+        return;
+      }
+
+      const outLabel = LABEL_BY_MIME[state.outputFormat];
+      const totalSize = state.files.reduce((sum, f) => sum + f.size, 0);
+      summaryText.textContent = `${count}件 · 合計 ${formatBytes(totalSize)} → ${outLabel} に変換`;
+    }
+
+    function renderFileList() {
+      fileList.innerHTML = state.files.map((entry) => `
+        <div class="file-item" data-id="${entry.id}">
+          <div class="file-item-thumb">
+            <img src="${entry.thumbUrl}" alt="">
+          </div>
+          <div class="file-item-info">
+            <div class="file-item-name">${escapeHtml(entry.name)}</div>
+            <div class="file-item-meta">${LABEL_BY_MIME[entry.type]} · ${formatBytes(entry.size)}</div>
+          </div>
+          <button type="button" class="file-item-remove" data-remove="${entry.id}" aria-label="削除">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      `).join('');
+
+      fileList.querySelectorAll('[data-remove]').forEach((btn) => {
+        btn.addEventListener('click', () => removeFile(Number(btn.dataset.remove)));
+      });
+
+      updateUI();
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function createThumb(file) {
+      const url = URL.createObjectURL(file);
+      try {
+        const img = await loadImage(url);
+        const max = 96;
+        const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', 0.8);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    function loadImage(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
+        img.src = url;
+      });
+    }
+
+    async function handleFiles(fileListLike) {
+      const added = [];
+
+      for (const file of fileListLike) {
+        const mime = detectMime(file);
+        if (!mime) {
+          showToast(`未対応の形式です: ${file.name}`);
+          continue;
+        }
+        const thumbUrl = await createThumb(file);
+        added.push({
+          id: ++fileIdCounter,
+          name: file.name,
+          type: mime,
+          size: file.size,
+          file,
+          thumbUrl,
+        });
+      }
+
+      if (!added.length) return;
+      state.files.push(...added);
+      renderFileList();
+    }
+
+    function removeFile(id) {
+      const entry = state.files.find((f) => f.id === id);
+      if (!entry) return;
+      state.files = state.files.filter((f) => f.id !== id);
+      renderFileList();
+    }
+
+    function clearAll() {
+      state.files = [];
+      renderFileList();
+    }
+
+    async function convertImage(file, mime, quality) {
+      const url = URL.createObjectURL(file);
+      try {
+        const img = await loadImage(url);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+
+        if (mime === 'image/jpeg') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        ctx.drawImage(img, 0, 0);
+
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob(
+            (result) => {
+              if (result) resolve(result);
+              else reject(new Error('変換に失敗しました'));
+            },
+            mime,
+            mime === 'image/png' ? undefined : quality / 100,
+          );
+        });
+
+        return blob;
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function convertAll() {
+      if (!state.files.length) return;
+
+      if (state.outputFormat === 'image/webp') {
+        const probe = document.createElement('canvas');
+        probe.width = 1;
+        probe.height = 1;
+        const supported = probe.toDataURL('image/webp').startsWith('data:image/webp');
+        if (!supported) {
+          showToast('このブラウザは WebP 出力に対応していません');
+          return;
+        }
+      }
+
+      progressOverlay.classList.add('visible');
+      convertBtn.disabled = true;
+
+      let success = 0;
+
+      try {
+        for (let i = 0; i < state.files.length; i++) {
+          const entry = state.files[i];
+          progressText.textContent = '変換中...';
+          progressDetail.textContent = `${i + 1} / ${state.files.length}: ${entry.name}`;
+
+          const blob = await convertImage(entry.file, state.outputFormat, state.quality);
+          const filename = buildOutputName(entry.name, state.outputFormat);
+          downloadBlob(blob, filename);
+          success++;
+          await new Promise((r) => setTimeout(r, 200));
+        }
+
+        showToast(`${success}件の変換が完了しました`);
+      } catch (err) {
+        showToast(err.message || '変換中にエラーが発生しました');
+      } finally {
+        progressOverlay.classList.remove('visible');
+        convertBtn.disabled = state.files.length === 0;
+      }
+    }
+
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+      fileInput.value = '';
+    });
+
+    formatToggle.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-format]');
+      if (!btn) return;
+      state.outputFormat = btn.dataset.format;
+      formatToggle.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b === btn));
+      updateQualityVisibility();
+      updateUI();
+    });
+
+    qualityInput.addEventListener('input', () => {
+      state.quality = Number(qualityInput.value);
+      qualityValue.textContent = `${state.quality}%`;
+    });
+
+    clearAllBtn.addEventListener('click', clearAll);
+    convertBtn.addEventListener('click', convertAll);
+
+    updateQualityVisibility();
+    updateUI();
+  </script>
+</body>
+</html>
